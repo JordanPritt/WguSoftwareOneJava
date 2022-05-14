@@ -21,12 +21,13 @@ import javafx.stage.Stage;
 
 import java.io.IOException;
 import java.net.URL;
+import java.util.Comparator;
 import java.util.ResourceBundle;
 
 public class MainController implements Initializable {
 
-    private ObservableList<Part> partData;
-    private ObservableList<Product> productData;
+    private static ObservableList<Part> partData;
+    private static ObservableList<Product> productData;
 
     @FXML
     private TableView<Part> partTable;
@@ -206,4 +207,21 @@ public class MainController implements Initializable {
         productTable.getColumns().setAll(productId, productName, productStock, productPrice);
     }
 
+    public static void AddPart(Part part) {
+        partData.add(part);
+    }
+
+    public static void AddProduct(Product product) {
+        productData.add(product);
+    }
+
+    public static int nextPartId() {
+        int nextInt = partData.stream().max(Comparator.comparing(x -> x.getId())).get().getId();
+        return nextInt + 1;
+    }
+
+    public static int nextProductId() {
+        int nextInt = productData.stream().max(Comparator.comparing(x -> x.getId())).get().getId();
+        return nextInt + 1;
+    }
 }
