@@ -1,8 +1,12 @@
 package com.wgu.softwareone.controllers;
 
+import com.wgu.softwareone.Data.AppState;
 import com.wgu.softwareone.InventoryApplication;
+import com.wgu.softwareone.models.InHouse;
+import com.wgu.softwareone.models.Outsourced;
 import com.wgu.softwareone.models.Part;
 import com.wgu.softwareone.models.Product;
+import com.wgu.softwareone.Data.StateManager;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -10,6 +14,7 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.TableColumn;
@@ -25,10 +30,6 @@ import java.util.Comparator;
 import java.util.ResourceBundle;
 
 public class MainController implements Initializable {
-
-    private static ObservableList<Part> partData;
-    private static ObservableList<Product> productData;
-
     @FXML
     private TableView<Part> partTable;
     @FXML
@@ -78,7 +79,7 @@ public class MainController implements Initializable {
 
     @FXML
     private void filterPartTable(KeyEvent event) {
-        ObservableList<Part> filteredParts = partData.filtered(part -> {
+        ObservableList<Part> filteredParts = AppState.partData.filtered(part -> {
             try {
                 if (part.getName().toLowerCase().contains(partFilter.getText().toLowerCase())) {
                     return true;
@@ -93,7 +94,7 @@ public class MainController implements Initializable {
         });
 
         if (filteredParts.size() == 0) {
-            partTable.setItems(partData);
+            partTable.setItems(AppState.partData);
             return;
         }
 
@@ -102,22 +103,18 @@ public class MainController implements Initializable {
 
     @FXML
     private void filterProductTable(KeyEvent event) {
-        ObservableList<Product> filteredProducts = productData.filtered(product -> {
+        ObservableList<Product> filteredProducts = AppState.productData.filtered(product -> {
             try {
                 if (product.getName().toLowerCase().contains(productFilter.getText().toLowerCase())) {
                     return true;
-                } else if (product.getId() == Integer.parseInt(productFilter.getText())) {
-                    return true;
-                } else {
-                    return false;
-                }
+                } else return product.getId() == Integer.parseInt(productFilter.getText());
             } catch (NumberFormatException ex) {
                 return false;
             }
         });
 
         if (filteredProducts.size() == 0) {
-            productTable.setItems(productData);
+            productTable.setItems(AppState.productData);
             return;
         }
 
@@ -128,16 +125,37 @@ public class MainController implements Initializable {
     private void deletePart(ActionEvent event) {
         ObservableList<Part> selectedItems = partTable.getSelectionModel().getSelectedItems();
         for (int i = 0; i < selectedItems.size(); i++) {
-            partData.remove(selectedItems.get(i));
+            AppState.partData.remove(selectedItems.get(i));
         }
     }
 
     @FXML
     private void deleteProduct(ActionEvent event) {
         ObservableList<Product> selectedItems = productTable.getSelectionModel().getSelectedItems();
-        for (int i = 0; i < selectedItems.size(); i++) {
-            productData.remove(selectedItems.get(i));
+        for (Product selectedItem : selectedItems) {
+            AppState.productData.remove(selectedItem);
         }
+    }
+
+    @FXML
+    private void modifyPart(ActionEvent event) throws IOException {
+        Part selectedItem = partTable.getSelectionModel().getSelectedItem();
+        disablePartButtons();
+
+        Stage newWindow = new Stage();
+        newWindow.setTitle("Modify Part");
+
+        //FXMLLoader loader = new FXMLLoader(InventoryApplication.class.getResource("add-or-modify-part-view.fxml"));
+        FXMLLoader loader = new FXMLLoader(InventoryApplication.class.getResource("add-or-modify-part-view.fxml"));
+        Parent root = loader.load();
+        AddOrModifyPartController controller = loader.getController();
+        controller.setPart(selectedItem);
+        controller.setModifying(true);
+
+        newWindow.setScene(new Scene(root));
+        newWindow.showAndWait();
+
+        enablePartButtons();
     }
 
     @FXML
@@ -149,7 +167,7 @@ public class MainController implements Initializable {
 
         Stage newWindow = new Stage();
         newWindow.setTitle("Add Part");
-        FXMLLoader loader = new FXMLLoader(InventoryApplication.class.getResource("add-part-view.fxml"));
+        FXMLLoader loader = new FXMLLoader(InventoryApplication.class.getResource("add-or-modify-part-view.fxml"));
         newWindow.setScene(new Scene(loader.load()));
         newWindow.showAndWait();
 
@@ -160,10 +178,7 @@ public class MainController implements Initializable {
 
     @FXML
     private void addProductView(ActionEvent event) throws IOException {
-        // disable buttons to prevent opening another scene;
-        addProductButton.setDisable(true);
-        modifyProductButton.setDisable(true);
-        deleteProductButton.setDisable(true);
+        disablePartButtons();
 
         Stage newWindow = new Stage();
         newWindow.setTitle("Add Part");
@@ -171,20 +186,12 @@ public class MainController implements Initializable {
         newWindow.setScene(new Scene(loader.load()));
         newWindow.showAndWait();
 
-        addProductButton.setDisable(false);
-        modifyProductButton.setDisable(false);
-        deleteProductButton.setDisable(false);
+        enablePartButtons();
     }
 
     @Override
     public void initialize(final URL url, final ResourceBundle resourceBundle) {
-        // setup Part table initial data
-        partData = FXCollections.observableArrayList(
-                new Part(0, "Carbon Frame Cylinder", 5.0, 3, 0, 25),
-                new Part(1, "Aluminium Sphere Barrings", 15.0, 16, 5, 50),
-                new Part(2, "Steel Support Bar", 54.0, 5, 1, 10)
-        );
-        partTable.setItems(partData);
+        partTable.setItems(AppState.partData);
 
         partId.setCellValueFactory(new PropertyValueFactory<Part, Integer>("id"));
         partName.setCellValueFactory(new PropertyValueFactory<Part, String>("name"));
@@ -193,12 +200,7 @@ public class MainController implements Initializable {
         partTable.getColumns().setAll(partId, partName, partStock, partPrice);
 
         // setup Products table initial data
-        productData = FXCollections.observableArrayList(
-                new Product(0, "Small Wheel", 5.0, 3, 0, 25),
-                new Product(1, "Forged Knife", 15.0, 16, 5, 50),
-                new Product(2, "Bike Frame", 54.0, 5, 1, 10)
-        );
-        productTable.setItems(productData);
+        AppState.productData = FXCollections.emptyObservableList();
 
         productId.setCellValueFactory(new PropertyValueFactory<Product, Integer>("id"));
         productName.setCellValueFactory(new PropertyValueFactory<Product, String>("name"));
@@ -207,21 +209,15 @@ public class MainController implements Initializable {
         productTable.getColumns().setAll(productId, productName, productStock, productPrice);
     }
 
-    public static void AddPart(Part part) {
-        partData.add(part);
+    private void disablePartButtons() {
+        addPartButton.setDisable(true);
+        modifyPartButton.setDisable(true);
+        deletePartButton.setDisable(true);
     }
 
-    public static void AddProduct(Product product) {
-        productData.add(product);
-    }
-
-    public static int nextPartId() {
-        int nextInt = partData.stream().max(Comparator.comparing(x -> x.getId())).get().getId();
-        return nextInt + 1;
-    }
-
-    public static int nextProductId() {
-        int nextInt = productData.stream().max(Comparator.comparing(x -> x.getId())).get().getId();
-        return nextInt + 1;
+    private void enablePartButtons() {
+        addPartButton.setDisable(false);
+        modifyPartButton.setDisable(false);
+        deletePartButton.setDisable(false);
     }
 }

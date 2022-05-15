@@ -1,6 +1,6 @@
 package com.wgu.softwareone.models;
 
-public class Part {
+public abstract class Part {
 
     private int id;
     private String name;
