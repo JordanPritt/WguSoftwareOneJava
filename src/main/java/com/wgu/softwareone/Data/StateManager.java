@@ -2,7 +2,7 @@ package com.wgu.softwareone.Data;
 
 import com.wgu.softwareone.models.Part;
 import com.wgu.softwareone.models.Product;
-
+import javafx.collections.ObservableList;
 import java.util.Comparator;
 
 public class StateManager {
@@ -24,11 +24,12 @@ public class StateManager {
 
     public static void modifyPart(Part oldPart, Part newPart) {
         try {
-            int oldPartIndex = AppState.partData.indexOf(oldPart);
-            AppState.partData.remove(oldPartIndex);
+            ObservableList<Part> newList = AppState.partData;
+            newList.remove(oldPart);
+
+            AppState.partData = newList;
             AppState.partData.add(newPart);
-            AppState.partData = AppState.partData.sorted();
-        } catch (Exception ex) {
+        } catch (UnsupportedOperationException ex) {
             System.out.println(ex.getMessage());
         }
     }

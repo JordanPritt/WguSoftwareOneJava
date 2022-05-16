@@ -83,17 +83,13 @@ public class MainController implements Initializable {
             try {
                 if (part.getName().toLowerCase().contains(partFilter.getText().toLowerCase())) {
                     return true;
-                } else if (part.getId() == Integer.parseInt(partFilter.getText())) {
-                    return true;
-                } else {
-                    return false;
-                }
+                } else return part.getId() == Integer.parseInt(partFilter.getText());
             } catch (NumberFormatException ex) {
                 return false;
             }
         });
 
-        if (filteredParts.size() == 0) {
+        if (partFilter.getText().trim().equals("")) {
             partTable.setItems(AppState.partData);
             return;
         }
@@ -113,7 +109,7 @@ public class MainController implements Initializable {
             }
         });
 
-        if (filteredProducts.size() == 0) {
+        if (productFilter.getText().trim().equals("")) {
             productTable.setItems(AppState.productData);
             return;
         }
@@ -161,9 +157,7 @@ public class MainController implements Initializable {
     @FXML
     private void addPartView(ActionEvent event) throws IOException {
         // disable buttons to prevent opening another scene;
-        addPartButton.setDisable(true);
-        modifyPartButton.setDisable(true);
-        deletePartButton.setDisable(true);
+        disablePartButtons();
 
         Stage newWindow = new Stage();
         newWindow.setTitle("Add Part");
@@ -171,21 +165,22 @@ public class MainController implements Initializable {
         newWindow.setScene(new Scene(loader.load()));
         newWindow.showAndWait();
 
-        addPartButton.setDisable(false);
-        modifyPartButton.setDisable(false);
-        deletePartButton.setDisable(false);
+        enablePartButtons();
     }
 
     @FXML
     private void addProductView(ActionEvent event) throws IOException {
+        disableProductButtons();
         disablePartButtons();
 
         Stage newWindow = new Stage();
-        newWindow.setTitle("Add Part");
-        FXMLLoader loader = new FXMLLoader(InventoryApplication.class.getResource("add-product-view.fxml"));
+        newWindow.setTitle("Add Product");
+        FXMLLoader loader =
+                new FXMLLoader(InventoryApplication.class.getResource("add-or-modify-product-view.fxml"));
         newWindow.setScene(new Scene(loader.load()));
         newWindow.showAndWait();
 
+        enableProductButtons();
         enablePartButtons();
     }
 
@@ -219,5 +214,17 @@ public class MainController implements Initializable {
         addPartButton.setDisable(false);
         modifyPartButton.setDisable(false);
         deletePartButton.setDisable(false);
+    }
+
+    private void disableProductButtons() {
+        addProductButton.setDisable(true);
+        modifyProductButton.setDisable(true);
+        deleteProductButton.setDisable(true);
+    }
+
+    private void enableProductButtons() {
+        addProductButton.setDisable(false);
+        modifyProductButton.setDisable(false);
+        deleteProductButton.setDisable(false);
     }
 }
